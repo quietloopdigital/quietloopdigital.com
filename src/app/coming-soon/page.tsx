@@ -1,10 +1,30 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 
+const LINE = "Always running. Never noisy. Something new is on the way.";
+
+/**
+ * The root layout carries real SEO metadata — keywords, an OG description
+ * naming the services and the city. All of that has to be overridden here,
+ * or it leaks in the page source and in link previews even though nothing
+ * on screen says it.
+ */
 export const metadata: Metadata = {
   title: "Quiet Loop Digital — coming soon",
-  description: "Always running. Never noisy. Something new is on the way.",
+  description: LINE,
+  keywords: [],
   robots: { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    siteName: "Quiet Loop Digital",
+    title: "Quiet Loop Digital",
+    description: LINE,
+  },
+  twitter: {
+    card: "summary",
+    title: "Quiet Loop Digital",
+    description: LINE,
+  },
 };
 
 /**
