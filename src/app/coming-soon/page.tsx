@@ -3,54 +3,23 @@ import Image from "next/image";
 
 const LINE = "Always running. Never noisy. Something new is on the way.";
 
-const R = 92; // radius of the grey ring
-const TUBE = 12; // how far the signal swings around that ring
-const TRAIL_LENGTH = 48;
-
 /**
- * The travelling signal, modelled as a helix wrapping around the grey ring
- * — treating the ring as a tube rather than a line.
+ * Two rings, each with a short arc of orange running round it.
  *
- * Two angles per dot: `theta` is how far along the ring it sits, `phi` is
- * where it is around the tube. phi gives both a radial offset (visible, the
- * dot moves in and out) and a depth, z (invisible, but it drives everything
- * that sells the third dimension):
+ * The arcs are half a cycle apart, so they always sit on opposite sides of
+ * the mark. That's done with a negative animation-delay rather than a
+ * rotate() — a CSS animation replaces any transform attribute, so offsetting
+ * the start of the timeline is the only thing that survives.
  *
- *   near the viewer  →  larger, brighter, drawn over the ring
- *   behind the ring  →  smaller, dimmer, drawn under it
- *
- * That last part — the ring actually occluding the dots behind it — is what
- * stops this reading as a flat squiggle.
+ * strokeDasharray is "arc gap", and the two have to add up to the ring's
+ * circumference or the dash repeats.
  */
-type Dot = { cx: number; cy: number; size: number; opacity: number };
+const SPIN = 8; // seconds — must match the ql-orbit keyframe duration
 
-const behind: Dot[] = [];
-const front: Dot[] = [];
-
-for (let i = 0; i < TRAIL_LENGTH; i++) {
-  const t = i / (TRAIL_LENGTH - 1); // 0 → 1 along the trail
-
-  const theta = (-90 + t * 120) * (Math.PI / 180); // 120° of the ring
-  const phi = t * Math.PI * 6; // three full turns around the tube
-
-  const r = R + TUBE * Math.cos(phi);
-  const z = Math.sin(phi); // −1 behind … +1 in front
-
-  const taper = Math.sin(t * Math.PI); // 0 at both ends, 1 in the middle
-  const depth = (z + 1) / 2; // 0 far … 1 near
-
-  const dot: Dot = {
-    cx: 100 + r * Math.cos(theta),
-    cy: 100 + r * Math.sin(theta),
-    size: (0.7 + taper * 3.1) * (0.58 + depth * 0.56),
-    opacity: (0.14 + taper * 0.86) * (0.4 + depth * 0.6),
-  };
-
-  (z < 0 ? behind : front).push(dot);
-}
-
-const TRAIL_BEHIND = behind;
-const TRAIL_FRONT = front;
+const RINGS = [
+  { r: 92, arc: 58, delay: "0s" },
+  { r: 70, arc: 44, delay: `-${SPIN / 2}s` }, // half a cycle behind → always opposite
+] as const;
 
 /**
  * The root layout carries real SEO metadata — keywords, an OG description
@@ -105,45 +74,33 @@ export default function ComingSoon() {
             className="absolute inset-0 h-full w-full"
             aria-hidden="true"
           >
-            {/* the far half of the helix — drawn first, so the ring covers it */}
-            <g className="ql-orbit-c">
-              {TRAIL_BEHIND.map((d, i) => (
-                <circle
-                  key={`b${i}`}
-                  cx={d.cx}
-                  cy={d.cy}
-                  r={d.size}
-                  fill="#faa220"
-                  opacity={d.opacity}
-                />
-              ))}
-            </g>
-
-            <circle
-              cx="100"
-              cy="100"
-              r={R}
-              fill="none"
-              stroke="#2e2d29"
-              strokeWidth="1.5"
-            />
-
-            {/* the near half — over the ring, and glowing */}
-            <g
-              className="ql-orbit-c"
-              style={{ filter: "drop-shadow(0 0 3.5px rgba(250,162,32,0.55))" }}
-            >
-              {TRAIL_FRONT.map((d, i) => (
-                <circle
-                  key={`f${i}`}
-                  cx={d.cx}
-                  cy={d.cy}
-                  r={d.size}
-                  fill="#faa220"
-                  opacity={d.opacity}
-                />
-              ))}
-            </g>
+            {RINGS.map((ring) => {
+              const circumference = 2 * Math.PI * ring.r;
+              return (
+                <g key={ring.r}>
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r={ring.r}
+                    fill="none"
+                    stroke="#2e2d29"
+                    strokeWidth="1.5"
+                  />
+                  <circle
+                    className="ql-orbit"
+                    style={{ animationDelay: ring.delay }}
+                    cx="100"
+                    cy="100"
+                    r={ring.r}
+                    fill="none"
+                    stroke="#faa220"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeDasharray={`${ring.arc} ${circumference - ring.arc}`}
+                  />
+                </g>
+              );
+            })}
           </svg>
 
           <Image

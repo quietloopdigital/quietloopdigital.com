@@ -118,13 +118,6 @@ p {
   animation: ql-orbit 8s linear infinite;
 }
 
-/* Same spin, but pivoting on the middle of the viewBox rather than the
-   element's own box — which is what a group of scattered dots needs. */
-.ql-orbit-c {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  animation: ql-orbit 9s linear infinite;
-}
 
 /* the ↻ at the centre — much slower, so the two never sync up */
 @keyframes ql-spin {
@@ -154,5 +147,5 @@ p {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .ql-orbit, .ql-orbit-c, .ql-spin, .ql-marquee { animation: none !important; }
+  .ql-orbit, .ql-spin, .ql-marquee { animation: none !important; }
 }
