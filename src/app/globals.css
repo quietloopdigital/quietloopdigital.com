@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ---------------------------------------------------------------
+   Quiet Loop Digital — design tokens
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+   Brand orange is #faa220 (from the logo). It only ever carries
+   large shapes and accents; it fails contrast as body text on
+   white (~1.9:1), so text links use --brand-deep instead.
+   --------------------------------------------------------------- */
+
+:root {
+  --bg: #ffffff;
+  --surface: #f6f5f3;
+  --surface-2: #edebe7;
+
+  --ink: #232323;
+  --ink-soft: #5f5e5a;
+  --ink-faint: #8b8a85;
+
+  --line: #e4e2de;
+  --line-strong: #d3d0ca;
+
+  --brand: #faa220;
+  --brand-deep: #a85c00; /* passes contrast for text on light */
+  --brand-tint: #fdf1de;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #121211;
+    --surface: #1a1a18;
+    --surface-2: #232320;
+
+    --ink: #eceae5;
+    --ink-soft: #a3a19a;
+    --ink-faint: #78766f;
+
+    --line: #2a2a26;
+    --line-strong: #3a3934;
+
+    --brand: #faa220;
+    --brand-deep: #ffc061; /* lighter, so it reads on dark */
+    --brand-tint: #2a2015;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-tint: var(--brand-tint);
+
+  --font-display: var(--font-jost);
+  --font-sans: var(--font-red-hat);
+}
+
+/* --------------------------------------------------------------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-red-hat), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings carry the geometric face; the logo is geometric too. */
+h1, h2, h3, h4 {
+  font-family: var(--font-jost), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Keyboard users get a visible ring everywhere. */
+:focus-visible {
+  outline: 2px solid var(--brand-deep);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--brand);
+  color: #232323;
+}
+
+/* ---------------------------------------------------------------
+   Motion
+
+   The brand is "quiet loop", so everything here is slow, continuous
+   and never asks for attention. Nothing bounces, nothing pops.
+   --------------------------------------------------------------- */
+
+/* the signal travelling around the ring */
+@keyframes ql-orbit {
+  to { transform: rotate(360deg); }
+}
+.ql-orbit {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ql-orbit 8s linear infinite;
+}
+
+/* the ↻ at the centre — much slower, so the two never sync up */
+@keyframes ql-spin {
+  to { transform: rotate(360deg); }
+}
+.ql-spin {
+  display: inline-block;
+  animation: ql-spin 14s linear infinite;
+}
+
+/* service ticker */
+@keyframes ql-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ql-marquee {
+  animation: ql-marquee 34s linear infinite;
+}
+.ql-marquee-wrap:hover .ql-marquee {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .ql-orbit, .ql-spin, .ql-marquee { animation: none !important; }
 }

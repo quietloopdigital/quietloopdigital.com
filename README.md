@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# quietloopdigital.com
 
-## Getting Started
+The website for **Quiet Loop Digital** — a one-person studio doing UI/UX design,
+graphic design, web development and DevOps for startups. Ahmedabad, India.
 
-First, run the development server:
+Live at [quietloopdigital.com](https://quietloopdigital.com).
+
+---
+
+## Stack
+
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4 — tokens in `src/app/globals.css` |
+| Fonts | Jost (headings) + Red Hat Text (body), self-hosted via `next/font` |
+| Hosting | Vercel |
+| DNS / TLS | Cloudflare |
+
+No animation library. Scroll reveals use a ~1 KB `IntersectionObserver`
+component; everything else is CSS keyframes. All of it is disabled under
+`prefers-reduced-motion`.
+
+## Running it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+npm run build        # production build
+npm run lint
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## The holding page
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Until launch, visitors see `/coming-soon` while the real site is built behind
+it. The switch is an environment variable:
 
-## Learn More
+```
+COMING_SOON=true     every visitor gets the holding page
+COMING_SOON=false    the real site is served  (local default)
+```
 
-To learn more about Next.js, take a look at the following resources:
+`src/middleware.ts` does the rewrite. To show the work-in-progress site to
+someone while the public still sees the holding page, send them to:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+https://quietloopdigital.com/?preview=<PREVIEW_TOKEN>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+That sets a cookie and they browse normally for 30 days.
 
-## Deploy on Vercel
+## Layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── layout.tsx           root — fonts, metadata, <html>/<body>
+│   ├── globals.css          design tokens, base styles, keyframes
+│   ├── (site)/              the real site — gets header + footer
+│   │   ├── layout.tsx
+│   │   └── page.tsx         home
+│   └── coming-soon/         holding page — deliberately bare, dark-only
+│       └── page.tsx
+├── components/
+│   ├── Header.tsx           sticky, theme-aware logo, mobile menu
+│   ├── Footer.tsx
+│   ├── Reveal.tsx           scroll-into-view fade + lift
+│   └── LoopDiagram.tsx      the four services on a running loop
+└── middleware.ts            holding-page switch
+public/brand/                logo and icon, light + dark variants
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Brand
+
+```
+Orange   #faa220     large shapes and accents only
+Deep     #a85c00     the orange as text — #faa220 is ~1.9:1 on white
+Ink      #232323
+```
+
+Light and dark themes are both defined; the site follows the visitor's OS
+setting. The holding page is the one exception — it commits to dark.
+
+---
+
+© Quiet Loop Digital. All rights reserved — this is a company website, not a
+template.
