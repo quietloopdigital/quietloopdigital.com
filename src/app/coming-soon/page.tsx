@@ -3,6 +3,33 @@ import Image from "next/image";
 
 const LINE = "Always running. Never noisy. Something new is on the way.";
 
+const R = 92; // the grey ring
+
+/**
+ * The travelling signal, built as a trail of dots rather than a stroked arc.
+ *
+ * A stroke can't taper and can't leave its own path. Dots can: their radius
+ * swells to the middle of the trail and shrinks at both ends, and each one
+ * sits at a radius that weaves in and out of the grey ring — so the signal
+ * wraps around the line instead of just riding along the top of it.
+ */
+const TRAIL_LENGTH = 34;
+
+const TRAIL = Array.from({ length: TRAIL_LENGTH }, (_, i) => {
+  const t = i / (TRAIL_LENGTH - 1); // 0 → 1 along the trail
+  const angle = (-90 + t * 96) * (Math.PI / 180); // ~96° of arc, starting at 12 o'clock
+  const weave = Math.sin(t * Math.PI * 3) * 8; // crosses the ring three times
+  const r = R + weave;
+
+  return {
+    cx: 100 + r * Math.cos(angle),
+    cy: 100 + r * Math.sin(angle),
+    // thin at both ends, thick in the middle
+    size: 0.8 + Math.sin(t * Math.PI) * 3.3,
+    opacity: 0.2 + Math.sin(t * Math.PI) * 0.8,
+  };
+});
+
 /**
  * The root layout carries real SEO metadata — keywords, an OG description
  * naming the services and the city. All of that has to be overridden here,
@@ -59,22 +86,23 @@ export default function ComingSoon() {
             <circle
               cx="100"
               cy="100"
-              r="92"
+              r={R}
               fill="none"
               stroke="#2e2d29"
               strokeWidth="1.5"
             />
-            <circle
-              className="ql-orbit"
-              cx="100"
-              cy="100"
-              r="92"
-              fill="none"
-              stroke="#faa220"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray="58 520"
-            />
+            <g className="ql-orbit-c">
+              {TRAIL.map((d, i) => (
+                <circle
+                  key={i}
+                  cx={d.cx}
+                  cy={d.cy}
+                  r={d.size}
+                  fill="#faa220"
+                  opacity={d.opacity}
+                />
+              ))}
+            </g>
           </svg>
 
           <Image
