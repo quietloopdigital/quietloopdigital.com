@@ -3,32 +3,54 @@ import Image from "next/image";
 
 const LINE = "Always running. Never noisy. Something new is on the way.";
 
-const R = 92; // the grey ring
+const R = 92; // radius of the grey ring
+const TUBE = 12; // how far the signal swings around that ring
+const TRAIL_LENGTH = 48;
 
 /**
- * The travelling signal, built as a trail of dots rather than a stroked arc.
+ * The travelling signal, modelled as a helix wrapping around the grey ring
+ * — treating the ring as a tube rather than a line.
  *
- * A stroke can't taper and can't leave its own path. Dots can: their radius
- * swells to the middle of the trail and shrinks at both ends, and each one
- * sits at a radius that weaves in and out of the grey ring — so the signal
- * wraps around the line instead of just riding along the top of it.
+ * Two angles per dot: `theta` is how far along the ring it sits, `phi` is
+ * where it is around the tube. phi gives both a radial offset (visible, the
+ * dot moves in and out) and a depth, z (invisible, but it drives everything
+ * that sells the third dimension):
+ *
+ *   near the viewer  →  larger, brighter, drawn over the ring
+ *   behind the ring  →  smaller, dimmer, drawn under it
+ *
+ * That last part — the ring actually occluding the dots behind it — is what
+ * stops this reading as a flat squiggle.
  */
-const TRAIL_LENGTH = 34;
+type Dot = { cx: number; cy: number; size: number; opacity: number };
 
-const TRAIL = Array.from({ length: TRAIL_LENGTH }, (_, i) => {
+const behind: Dot[] = [];
+const front: Dot[] = [];
+
+for (let i = 0; i < TRAIL_LENGTH; i++) {
   const t = i / (TRAIL_LENGTH - 1); // 0 → 1 along the trail
-  const angle = (-90 + t * 96) * (Math.PI / 180); // ~96° of arc, starting at 12 o'clock
-  const weave = Math.sin(t * Math.PI * 3) * 8; // crosses the ring three times
-  const r = R + weave;
 
-  return {
-    cx: 100 + r * Math.cos(angle),
-    cy: 100 + r * Math.sin(angle),
-    // thin at both ends, thick in the middle
-    size: 0.8 + Math.sin(t * Math.PI) * 3.3,
-    opacity: 0.2 + Math.sin(t * Math.PI) * 0.8,
+  const theta = (-90 + t * 120) * (Math.PI / 180); // 120° of the ring
+  const phi = t * Math.PI * 6; // three full turns around the tube
+
+  const r = R + TUBE * Math.cos(phi);
+  const z = Math.sin(phi); // −1 behind … +1 in front
+
+  const taper = Math.sin(t * Math.PI); // 0 at both ends, 1 in the middle
+  const depth = (z + 1) / 2; // 0 far … 1 near
+
+  const dot: Dot = {
+    cx: 100 + r * Math.cos(theta),
+    cy: 100 + r * Math.sin(theta),
+    size: (0.7 + taper * 3.1) * (0.58 + depth * 0.56),
+    opacity: (0.14 + taper * 0.86) * (0.4 + depth * 0.6),
   };
-});
+
+  (z < 0 ? behind : front).push(dot);
+}
+
+const TRAIL_BEHIND = behind;
+const TRAIL_FRONT = front;
 
 /**
  * The root layout carries real SEO metadata — keywords, an OG description
@@ -83,6 +105,20 @@ export default function ComingSoon() {
             className="absolute inset-0 h-full w-full"
             aria-hidden="true"
           >
+            {/* the far half of the helix — drawn first, so the ring covers it */}
+            <g className="ql-orbit-c">
+              {TRAIL_BEHIND.map((d, i) => (
+                <circle
+                  key={`b${i}`}
+                  cx={d.cx}
+                  cy={d.cy}
+                  r={d.size}
+                  fill="#faa220"
+                  opacity={d.opacity}
+                />
+              ))}
+            </g>
+
             <circle
               cx="100"
               cy="100"
@@ -91,10 +127,15 @@ export default function ComingSoon() {
               stroke="#2e2d29"
               strokeWidth="1.5"
             />
-            <g className="ql-orbit-c">
-              {TRAIL.map((d, i) => (
+
+            {/* the near half — over the ring, and glowing */}
+            <g
+              className="ql-orbit-c"
+              style={{ filter: "drop-shadow(0 0 3.5px rgba(250,162,32,0.55))" }}
+            >
+              {TRAIL_FRONT.map((d, i) => (
                 <circle
-                  key={i}
+                  key={`f${i}`}
                   cx={d.cx}
                   cy={d.cy}
                   r={d.size}
