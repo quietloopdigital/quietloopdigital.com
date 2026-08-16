@@ -41,8 +41,8 @@ Until launch, visitors see `/coming-soon` while the real site is built behind
 it. The switch is an environment variable:
 
 ```
-COMING_SOON=true     every visitor gets the holding page
-COMING_SOON=false    the real site is served  (local default)
+COMING_SOON=false    the real site is served
+(unset / anything else)  the holding page — it fails closed on purpose
 ```
 
 `src/middleware.ts` does the rewrite. To show the work-in-progress site to

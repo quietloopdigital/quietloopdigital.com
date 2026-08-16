@@ -3,8 +3,13 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * The holding-page switch.
  *
- *   COMING_SOON=true   every visitor lands on /coming-soon
- *   COMING_SOON=false  the real site is served (this is the local default)
+ *   COMING_SOON=false  the real site is served
+ *   anything else      every visitor lands on /coming-soon
+ *
+ * Note the default: only an explicit "false" opens the site up. If the
+ * variable never reaches the runtime — misconfigured, marked sensitive,
+ * forgotten on a new environment — we show the holding page rather than
+ * an unfinished site. Failing closed is the whole point of the switch.
  *
  * To show the work-in-progress site to someone while the public still sees
  * the holding page, send them to  /?preview=<PREVIEW_TOKEN>  — that drops a
@@ -28,7 +33,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (process.env.COMING_SOON !== "true") {
+  if (process.env.COMING_SOON === "false") {
     return NextResponse.next();
   }
 
