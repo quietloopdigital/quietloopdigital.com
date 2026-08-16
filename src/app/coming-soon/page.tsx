@@ -18,7 +18,8 @@ const SPIN = 8; // seconds — must match the ql-orbit keyframe duration
 
 const RINGS = [
   { r: 92, arc: 58, delay: "0s" },
-  { r: 70, arc: 44, delay: `-${SPIN / 2}s` }, // half a cycle behind → always opposite
+  // far enough out to clear the mark — the logo fills roughly r=50
+  { r: 73, arc: 46, delay: `-${SPIN / 2}s` }, // half a cycle behind → always opposite
 ] as const;
 
 /**
@@ -109,7 +110,7 @@ export default function ComingSoon() {
             width={128}
             height={128}
             priority
-            className="relative h-28 w-28 sm:h-32 sm:w-32"
+            className="relative h-24 w-24 sm:h-26 sm:w-26"
           />
         </div>
 
