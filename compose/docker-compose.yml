@@ -1,0 +1,41 @@
+# Local Docker setup for quietloopdigital.com.
+#
+# Run from the repo root:
+#   docker compose -f compose/docker-compose.yml up --build
+#
+# Then:
+#   http://localhost         -> through nginx (production-shaped path)
+#   http://localhost:3000    -> straight to the Next.js container
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: quietloopdigital-web:local
+    restart: unless-stopped
+    environment:
+      # Same fail-closed default as everywhere else: unless this is
+      # explicitly "false", visitors get the holding page.
+      COMING_SOON: ${COMING_SOON:-true}
+      PREVIEW_TOKEN: ${PREVIEW_TOKEN:-local-dev-only}
+    ports:
+      # exposed directly too, so you can bypass nginx while debugging
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"

@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next";
 
+// Same reasoning as robots.ts: this has to be evaluated per request, not
+// baked in at build time.
+export const dynamic = "force-dynamic";
+
 const SITE = "https://quietloopdigital.com";
 
 /**

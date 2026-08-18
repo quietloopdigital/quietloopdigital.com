@@ -17,8 +17,8 @@
 /.next/
 /out/
 
-# production
-/build
+# CRA-style build output — Next.js doesn't produce this (it uses .next/),
+# and this repo intentionally has a build/ dir with the Dockerfile in it.
 
 # misc
 .DS_Store

@@ -1,5 +1,14 @@
 import type { MetadataRoute } from "next";
 
+// robots.txt has to reflect the CURRENT value of COMING_SOON, not whatever
+// it happened to be when `next build` ran. Without this, Next.js prerenders
+// the route once at build time and serves that forever — so a build made
+// before launch would keep saying "Disallow" even after the real site went
+// live (safe direction, but still wrong), and worse, a build made with
+// COMING_SOON=false baked in would keep saying "Allow" even if the site
+// were later put back behind the holding page.
+export const dynamic = "force-dynamic";
+
 const SITE = "https://quietloopdigital.com";
 
 /**

@@ -1,0 +1,12 @@
+# NOT used in production — built once, purely to measure against the
+# multi-stage image for the before/after numbers in the presentation.
+# Single stage: full Debian-based Node image, npm install (incl.
+# devDependencies), full source tree, no non-root user.
+
+FROM node:24
+WORKDIR /app
+COPY . .
+RUN npm install
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]

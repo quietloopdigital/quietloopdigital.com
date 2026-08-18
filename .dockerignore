@@ -1,0 +1,31 @@
+# Anything here never reaches the Docker build context — smaller context,
+# faster builds, and no chance of a secret getting baked into a layer.
+
+node_modules
+.next
+.git
+.gitignore
+
+# never let real secrets into an image
+.env
+.env.*
+!.env.example
+
+# editor / OS noise
+.vscode
+.idea
+*.log
+npm-debug.log*
+
+# docs and non-runtime project files — irrelevant to what actually runs
+README.md
+AGENTS.md
+CLAUDE.md
+*.md
+
+# this repo's own compose/build tooling — not needed inside the image
+build
+compose
+docker-compose*.yml
+Dockerfile*
+.dockerignore
