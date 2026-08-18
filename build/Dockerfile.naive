@@ -3,7 +3,7 @@
 # Single stage: full Debian-based Node image, npm install (incl.
 # devDependencies), full source tree, no non-root user.
 
-FROM node:24
+FROM node:26
 WORKDIR /app
 COPY . .
 RUN npm install
