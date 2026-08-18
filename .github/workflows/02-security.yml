@@ -124,12 +124,10 @@ jobs:
         with:
           fetch-depth: 0 # gitleaks needs history, not just the latest commit
       # gitleaks-action requires a free license for org-owned repos (this
-      # one is under the quietloopdigital org) — get one at gitleaks.io
-      # and add it as the GITLEAKS_LICENSE repo secret. continue-on-error
-      # is temporary: remove it once that secret exists, so a real leaked
-      # secret actually blocks the pipeline instead of just being logged.
+      # one is under the quietloopdigital org) — GITLEAKS_LICENSE is set,
+      # so this is a real gate again: a leaked secret blocks the pipeline
+      # instead of just being logged.
       - uses: gitleaks/gitleaks-action@v3
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
