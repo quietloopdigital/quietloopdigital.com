@@ -1,0 +1,62 @@
+name: CI
+
+# Three independent checks, run in parallel so a PR gets fast feedback.
+# No secrets or env vars needed: since Week 1, robots.ts/sitemap.ts read
+# COMING_SOON at request time (force-dynamic), not at build time, so this
+# build doesn't need it either. GITHUB_ACTIONS runners never set VERCEL,
+# so next.config.ts's `output: "standalone"` applies here too — this
+# incidentally exercises the same build path Docker uses.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Faster signal than waiting on the full Next.js build below —
+      # `next build` re-checks types anyway, but this fails in seconds
+      # instead of a minute if someone breaks a type.
+      - run: npx tsc --noEmit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build

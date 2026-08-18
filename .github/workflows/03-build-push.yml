@@ -1,0 +1,100 @@
+name: Build & Push
+
+# Builds the actual production image with build/Dockerfile (the same one
+# Week 1 tested locally), scans it with Trivy — a fs/config scan checks
+# source and configuration, but only scanning the *built image* catches
+# what actually ends up in the base OS layer (node:24-alpine + whatever
+# apk packages it carries) — then pushes to GHCR, but only from main and
+# only if the scan is clean. A vulnerable image never reaches the
+# registry.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    name: Build, scan, push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image (load locally, don't push yet)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: build/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.IMAGE }}:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Report pass — full SBOM-adjacent vulnerability list, uploaded to
+      # the Security tab, never fails the job on its own.
+      - name: Trivy image scan (report)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE }}:scan
+          format: sarif
+          output: trivy-image.sarif
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
+
+      - name: Upload to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      # Gate — this is what actually stops a bad image from being
+      # pushed. HIGH is included here (not just CRITICAL, unlike the
+      # source scan) because this is the exact artifact real traffic
+      # would run.
+      - name: Trivy image scan (gate — fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE }}:scan
+          format: table
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      # Only reachable if both Trivy gates above passed.
+      - name: Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: build/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,121 @@
+name: Security
+
+# Four independent scanners. Each one uploads its findings to the repo's
+# Security tab (SARIF) so results live in one place instead of being
+# scattered across job logs — and each also has a hard gate that fails the
+# job on anything serious, so a bad dependency or a leaked key blocks a
+# merge rather than just getting logged.
+#
+# Runs on push/PR (catches what a change introduces) and weekly on a
+# schedule (catches newly-disclosed CVEs in dependencies nobody touched).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Monday 03:00 UTC — new CVEs get published against existing
+    # dependencies all the time, not just when someone edits code.
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-fs:
+    name: Trivy — dependencies & source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Report pass: every severity, never fails the job — this is what
+      # populates the Security tab so nothing gets hidden.
+      - name: Trivy (report)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs.sarif
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
+
+      - name: Upload to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+      # Gate pass: same scan, but fails the job if anything CRITICAL
+      # turns up. Kept separate from the report pass above so the SARIF
+      # still uploads even when this one fails.
+      - name: Trivy (gate — fail on CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: "CRITICAL"
+          exit-code: "1"
+
+  trivy-config:
+    name: Trivy — Dockerfile & compose misconfig
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy config (report)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy-config.sarif
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+          exit-code: "0"
+
+      - name: Upload to Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-config.sarif
+          category: trivy-config
+
+      - name: Trivy config (gate — fail on HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # high/critical only — this is a marketing site with three runtime
+      # dependencies (next/react/react-dom); low/moderate advisories in
+      # transitive build tooling aren't worth blocking a merge over.
+      - run: npm audit --audit-level=high
+
+  gitleaks:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks needs history, not just the latest commit
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

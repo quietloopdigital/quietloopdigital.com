@@ -1,0 +1,28 @@
+version: 2
+updates:
+  # npm dependencies — weekly, grouped so it's one PR instead of a dozen
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+
+  # the actions used in .github/workflows/ — these need updates too;
+  # they're code that runs with repo secrets.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+
+  # base image (node:24-alpine) in build/Dockerfile
+  - package-ecosystem: docker
+    directory: "/build"
+    schedule:
+      interval: weekly
+      day: monday
