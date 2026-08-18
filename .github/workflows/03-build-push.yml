@@ -44,7 +44,7 @@ jobs:
       # Report pass — full SBOM-adjacent vulnerability list, uploaded to
       # the Security tab, never fails the job on its own.
       - name: Trivy image scan (report)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}:scan
           format: sarif
@@ -64,7 +64,7 @@ jobs:
       # source scan) because this is the exact artifact real traffic
       # would run.
       - name: Trivy image scan (gate — fail on HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE }}:scan
           format: table
