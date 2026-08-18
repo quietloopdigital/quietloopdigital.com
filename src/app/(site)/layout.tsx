@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
  * Everything in the (site) group gets the real chrome. The coming-soon
  * page lives outside it, so it renders on a bare page.
  */
-export default function SiteLayout({ children }: LayoutProps<"/">) {
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header />
