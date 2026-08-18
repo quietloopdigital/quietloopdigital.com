@@ -50,6 +50,21 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
+# The base image ships the full npm CLI, with its own bundled
+# dependencies (tar, undici, brace-expansion, ip-address, ...) — but a
+# standalone server started with `node server.js` never calls npm. Those
+# bundled packages pick up their own CVEs over time regardless, and a
+# scanner correctly flags them as present even though nothing in this
+# image can ever reach them. Removing npm/npx/corepack deletes that dead
+# weight outright rather than carrying known vulnerabilities in
+# unreachable code.
+RUN rm -rf \
+      /usr/local/lib/node_modules/npm \
+      /usr/local/lib/node_modules/corepack \
+      /usr/local/bin/npm \
+      /usr/local/bin/npx \
+      /usr/local/bin/corepack
+
 # Alpine already has a "node" user (uid 1000) — reuse it instead of adding
 # a new one, so the image doesn't drag in shadow-utils.
 RUN mkdir -p /app/.next && chown node:node /app/.next
